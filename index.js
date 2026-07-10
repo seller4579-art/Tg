@@ -9,21 +9,45 @@ app.get('/tgnum', async (req, res) => {
     if (!tgusername) return res.status(400).json({ error: "tgusername required" });
     if (!apikey) return res.status(401).json({ error: "apikey required" });
 
-    // ✅ Real upstream API call
-    const response = await fetch(
-      `https://username-usrid-to-num.onrender.com/username/${encodeURIComponent(tgusername)}?key=${apikey}`,
-      {
-        headers: {
-          "Accept": "application/json",
-          "User-Agent": "Mozilla/5.0"
-        },
-        timeout: 15000
+    // Clean username - @ remove karo
+    const cleanUsername = tgusername.replace('@', '');
+
+    // ✅ Sahi upstream URL
+    const upstreamUrl = `https://username-usrid-to-num.onrender.com/username/${cleanUsername}?key=${apikey}`;
+
+    const response = await fetch(upstreamUrl, {
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
       }
-    );
+    });
 
-    const upstream = await response.json();
+    // ✅ Pehle text lo phir parse karo
+    const text = await response.text();
 
-    // ✅ Build exact response format
+    let upstream;
+    try {
+      upstream = JSON.parse(text);
+    } catch (e) {
+      // HTML aa raha hai — upstream down ya wrong URL
+      return res.status(502).json({
+        "Api Buy": "@Boss_Hcrr",
+        "Owner": "@Boss_Hcrr",
+        "error": "Upstream API unavailable",
+        "tip": "Real upstream API ka sahi URL daalo",
+        "developer": "@Boss_Hcrr"
+      });
+    }
+
+    // ✅ Data extract karo
+    let data = [];
+    if (Array.isArray(upstream)) data = upstream;
+    else if (upstream?.data) data = Array.isArray(upstream.data) ? upstream.data : [upstream.data];
+    else if (upstream?.result) data = Array.isArray(upstream.result) ? upstream.result : [upstream.result];
+    else if (upstream?.contacts) data = upstream.contacts;
+    else if (upstream?.number || upstream?.phone) data = [upstream];
+
     const finalResponse = {
       "Api Buy": "@Boss_Hcrr",
       "Owner": "@Boss_Hcrr",
@@ -31,9 +55,9 @@ app.get('/tgnum', async (req, res) => {
         "parameters": {
           "value": tgusername,
           "service": "Telegram to Number",
-          "success": true
+          "success": data.length > 0
         },
-        "data": upstream?.data || upstream?.result || upstream?.contacts || []
+        "data": data
       },
       "credit": "@Boss_Hcrr",
       "developer": "@Boss_Hcrr"
@@ -43,8 +67,9 @@ app.get('/tgnum', async (req, res) => {
 
   } catch (err) {
     return res.status(500).json({
-      error: err.message,
       "Api Buy": "@Boss_Hcrr",
+      "Owner": "@Boss_Hcrr",
+      error: err.message,
       developer: "@Boss_Hcrr"
     });
   }
@@ -52,7 +77,7 @@ app.get('/tgnum', async (req, res) => {
 
 app.get('/', (req, res) => {
   res.json({
-    status: "running",
+    status: "running ✅",
     endpoint: "/tgnum?tgusername=@username&apikey=YOUR_KEY",
     developer: "@Boss_Hcrr"
   });
