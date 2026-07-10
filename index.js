@@ -4,49 +4,37 @@ const app = express();
 
 app.get('/tgnum', async (req, res) => {
   try {
-    const { tgusername, apikey } = req.query;
+    const { tgusername } = req.query;
 
-    if (!tgusername) return res.status(400).json({ error: "tgusername required" });
-    if (!apikey) return res.status(401).json({ error: "apikey required" });
-
-    // Clean username - @ remove karo
-    const cleanUsername = tgusername.replace('@', '');
-
-    // ✅ Sahi upstream URL
-    const upstreamUrl = `https://username-usrid-to-num.onrender.com/username/${cleanUsername}?key=${apikey}`;
-
-    const response = await fetch(upstreamUrl, {
-      headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-      }
+    if (!tgusername) return res.status(400).json({ 
+      "Api Buy": "@Boss_Hcrr",
+      error: "tgusername required",
+      developer: "@Boss_Hcrr"
     });
 
-    // ✅ Pehle text lo phir parse karo
-    const text = await response.text();
+    // ✅ Real upstream API — no key needed
+    const response = await fetch(
+      `https://fz-tgnumid-info-paidxc.gauravcyber0.workers.dev/?tgusername=${encodeURIComponent(tgusername)}`,
+      {
+        headers: {
+          "Accept": "application/json",
+          "User-Agent": "Mozilla/5.0"
+        }
+      }
+    );
 
+    const text = await response.text();
     let upstream;
     try {
       upstream = JSON.parse(text);
-    } catch (e) {
-      // HTML aa raha hai — upstream down ya wrong URL
+    } catch(e) {
       return res.status(502).json({
         "Api Buy": "@Boss_Hcrr",
         "Owner": "@Boss_Hcrr",
-        "error": "Upstream API unavailable",
-        "tip": "Real upstream API ka sahi URL daalo",
-        "developer": "@Boss_Hcrr"
+        error: "Upstream unavailable",
+        developer: "@Boss_Hcrr"
       });
     }
-
-    // ✅ Data extract karo
-    let data = [];
-    if (Array.isArray(upstream)) data = upstream;
-    else if (upstream?.data) data = Array.isArray(upstream.data) ? upstream.data : [upstream.data];
-    else if (upstream?.result) data = Array.isArray(upstream.result) ? upstream.result : [upstream.result];
-    else if (upstream?.contacts) data = upstream.contacts;
-    else if (upstream?.number || upstream?.phone) data = [upstream];
 
     const finalResponse = {
       "Api Buy": "@Boss_Hcrr",
@@ -55,9 +43,9 @@ app.get('/tgnum', async (req, res) => {
         "parameters": {
           "value": tgusername,
           "service": "Telegram to Number",
-          "success": data.length > 0
+          "success": upstream?.response?.parameters?.success || false
         },
-        "data": data
+        "data": upstream?.response?.data || []
       },
       "credit": "@Boss_Hcrr",
       "developer": "@Boss_Hcrr"
@@ -78,7 +66,7 @@ app.get('/tgnum', async (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     status: "running ✅",
-    endpoint: "/tgnum?tgusername=@username&apikey=YOUR_KEY",
+    endpoint: "/tgnum?tgusername=@username",
     developer: "@Boss_Hcrr"
   });
 });
